@@ -8,7 +8,7 @@ else
     # because osx image lacks python support, make virtualenv manually
     git clone https://github.com/matthew-brett/multibuild
     source multibuild/osx_utils.sh
-    get_macpython_environment $PYTHON_VERSION venv
+    get_macpython_environment $PYTHON_VERSION
     # have to uninstall oclint to be able to install gcc (required by hdf5)
     brew cask uninstall oclint
     # install non-python build requirements

@@ -9,4 +9,4 @@ rm -r /tmp/hdf5
 
 # python tests
 cd python
-python setup.py test
+python setup.py test --addopts '--maxfail=10'
