@@ -6,7 +6,7 @@ if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
     sudo apt-get install -qq cmake libhdf5-dev
 else
     # because osx image lacks python support, make virtualenv manually
-    git clone https://github.com/matthew-brett/multibuild
+    git clone https://github.com/matthew-brett/multibuild --depth 1
     source multibuild/osx_utils.sh
     get_macpython_environment $PYTHON_VERSION venv
     source venv/bin/activate
@@ -16,6 +16,8 @@ else
     brew install hdf5
 fi
 
+echo $PATH
+which python
 # install python build requirements
 python -m pip install -U pip
 python -m pip install -U -r python/dev_requirements.txt
