@@ -41,15 +41,15 @@ install:
   - make digital_rf_sdist
   # install python package into virtual environment for testing
   - python -m pip install dist/digital_rf-*.tar.gz
+  # install python test requirements
+  - python -m pip install pytest
 
 script:
   # c tests
   - make test
   - rm -r /tmp/hdf5
   # python tests
-  - pushd python
-  - python setup.py test --addopts '--maxfail=10'
-  - popd
+  - pytest --maxfail=10 ./python/
 
 # Note: TWINE_USERNAME and TWINE_PASSWORD are set in Travis settings
 deploy:
