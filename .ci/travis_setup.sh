@@ -18,6 +18,7 @@ else
         # have to uninstall oclint to be able to install gcc (required by hdf5)
         brew cask uninstall oclint || true
         # install non-python build requirements
+        export HOMEBREW_NO_AUTO_UPDATE=1
         brew install hdf5
         python -m pip install -U pip
     }

@@ -42,7 +42,7 @@ install:
   # install python package into virtual environment for testing
   - python -m pip install dist/digital_rf-*.tar.gz
   # install python test requirements
-  - python -m pip install pytest
+  - python -m pip install -U pytest
 
 script:
   # c tests
