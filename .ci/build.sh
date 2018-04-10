@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e -x
 
-echo $PATH
-which python
-
 # build libraries
 mkdir build
 cd build

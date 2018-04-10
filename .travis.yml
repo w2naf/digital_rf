@@ -25,13 +25,13 @@ matrix:
         - PYTHON_VERSION=3.6
 
 before_install:
-  - .ci/travis_setup.sh
+  - source .ci/travis_setup.sh
 
 install:
-  - .ci/build.sh
+  - source .ci/build.sh
 
 script:
-  - .ci/test.sh
+  - source .ci/test.sh
 
 # Note: TWINE_USERNAME and TWINE_PASSWORD are set in Travis settings
 deploy:

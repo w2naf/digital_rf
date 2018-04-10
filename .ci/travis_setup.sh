@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e -x
 
 if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
     # install non-python build requirements
@@ -16,8 +17,6 @@ else
     brew install hdf5
 fi
 
-echo $PATH
-which python
 # install python build requirements
 python -m pip install -U pip
 python -m pip install -U -r python/dev_requirements.txt
