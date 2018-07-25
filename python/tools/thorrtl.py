@@ -647,6 +647,7 @@ class Thor(object):
 
         # populate flowgraph one channel at a time
         fg = gr.top_block()
+        ipdb.set_trace()
         for ko in range(op.nochs):
             rtl_chan = rtl_dict[ko]
             # receiver channel number corresponding to this output channel
