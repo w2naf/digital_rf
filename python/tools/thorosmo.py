@@ -31,7 +31,6 @@ from gnuradio import filter as grfilter
 from gnuradio import blocks, gr
 import osmosdr
 
-import ipdb
 def equiripple_lpf(
     cutoff=0.45, transition_width=0.1, attenuation=80, pass_ripple=None,
 ):
@@ -397,7 +396,7 @@ class Thor(object):
 
         return op
 
-    def _rtl_setup(self):
+    def _osmosdr_setup(self):
         """Create, set up, and return a dictionary of RTL source objects."""
         op = self.op
         op.otw_format = 'sc32'
@@ -582,7 +581,7 @@ class Thor(object):
 
         # get RTL sources
 
-        rtl_dict = self._rtl_setup()
+        rtl_dict = self._osmosdr_setup()
 
         # finalize options (for settings that depend on USRP setup)
         self._finalize_options()
@@ -1003,6 +1002,10 @@ def _add_dir_group(parser):
 
 def _add_mainboard_group(parser):
     mbgroup = parser.add_argument_group(title='mainboard')
+    mbgroup.add_argument(
+        '-t', '--radiotype', dest='radtype', action=Extend,
+        help='''The type of radio that is used for recording.'''
+    )
     mbgroup.add_argument(
         '-m', '--mainboard', dest='mboards', action=Extend,
         help='''Mainboard address. (default: first device found)''',
