@@ -338,6 +338,8 @@ class Thor(object):
 
         # create device_addr string to identify the requested device(s)
         op.mboard_strs = []
+        radio_types = op.radtype
+
         for n, mb in enumerate(op.mboards):
             if re.match(r'[^0-9]+=.+', mb):
                 idtype, mb = mb.split('=')
