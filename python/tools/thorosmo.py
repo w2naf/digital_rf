@@ -31,6 +31,7 @@ from gnuradio import filter as grfilter
 from gnuradio import blocks, gr
 import osmosdr
 
+import ipdb
 def equiripple_lpf(
     cutoff=0.45, transition_width=0.1, attenuation=80, pass_ripple=None,
 ):
@@ -135,11 +136,11 @@ class Thor(object):
     def __init__(
         self, datadir, verbose=True,
         # mainboard group (num: len of mboards)
-        mboards=[], subdevs=['A:A'], clock_rates=[None],
+        radtype='', mboards=[], subdevs=[':5000'], clock_rates=[None],
         clock_sources=[''], time_sources=[''],
         # receiver group (apply to all)
         samplerate=1e6,
-        dev_args=['recv_buff_size=100000000', 'num_recv_frames=512'],
+        dev_args=['recv_buff_size=32000', 'num_recv_frames=512'],
         stream_args=[], tune_args=[],
         time_sync=True, wait_for_lock=True,
         stop_on_dropped=False, realtime=False, test_settings=True,
@@ -335,32 +336,40 @@ class Thor(object):
             op.centerfreqs[rch] if f in (None, True) else f
             for f, rch in zip(op.ch_centerfreqs, op.channels)
         ]
+      # fcd=0[,device=hw:2][,type=2]
+      # miri=0[,buffers=32] ...
+      # rtl=serial_number ...
+      # rtl=0[,rtl_xtal=28.8e6][,tuner_xtal=28.8e6] ...
+      # rtl=1[,buffers=32][,buflen=N*512] ...
+      # rtl=2[,direct_samp=0|1|2][,offset_tune=0|1][,bias=0|1] ...
+      # rtl_tcp=127.0.0.1:1234[,psize=16384][,direct_samp=0|1|2][,offset_tune=0|1][,bias=0|1] ...
+      # netsdr=127.0.0.1[:50000][,nchan=2]
+      # sdr-ip=127.0.0.1[:50000]
+      # cloudiq=127.0.0.1[:50000]
+      # sdr-iq=/dev/ttyUSB0
+      # osmosdr=0[,buffers=32][,buflen=N*512] ...
+      # airspy=0[,bias=0|1][,linearity][,sensitivity]
+      # redpitaya=192.168.1.100[:1001]
+      # freesrp=0[,fx3='path/to/fx3.img',fpga='path/to/fpga.bin',loopback]
+      # hackrf=0[,buffers=32][,bias=0|1][,bias_tx=0|1]
+      # bladerf=0[,tamer=internal|external|external_1pps][,smb=25e6]
+        accpt_types = ['fcd', 'rtl', 'rtl_tcp', 'netsdr','sdr-ip', 'cloudiq', 'osmosdr',
+                       'sdr-iq', 'airspy', 'redpitaya', 'freesrp', 'hackrf',
+                       'bladerf']
+
+        port_radios = ['netsdr','sdr-ip','cloudiq','sdr-iq','redpitaya']
+        radio_type = op.radtype
+
+        if not radio_type in accpt_types:
+            raise ValueError("Type of radio not acceptable")
 
         # create device_addr string to identify the requested device(s)
         op.mboard_strs = []
-        radio_types = op.radtype
-
         for n, mb in enumerate(op.mboards):
-            if re.match(r'[^0-9]+=.+', mb):
-                idtype, mb = mb.split('=')
-            elif re.match(
-                r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}', mb
-            ):
-                idtype = 'addr'
-            elif (
-                re.match(r'usrp[123]', mb) or re.match(r'b2[01]0', mb)
-                or re.match(r'x3[01]0', mb)
-            ):
-                idtype = 'type'
-            elif re.match(r'[0-9A-Fa-f]{1,}', mb):
-                idtype = 'rtl'
-            else:
-                idtype = 'name'
-            if len(op.mboards) == 1:
-                # do not use identifier numbering if only using one mainboard
-                s = '{type}={mb}'.format(type=idtype, mb=mb.strip())
-            else:
-                s = '{type}{n}={mb}'.format(type=idtype, n=n, mb=mb.strip())
+            s = 'numchan=1 {type}={mb}'.format(type=radio_type, mb=mb.strip())
+            if radio_type in port_radios:
+                s = s + op.subdevs[0]
+            s = ','.join(chain([s],op.dev_args))
             op.mboard_strs.append(s)
 
         if op.verbose:
@@ -409,14 +418,7 @@ class Thor(object):
                   42.1, 43.4, 43.9, 44.5, 48.0, 49.6]
         sup_sr = [1.024e6, 1.4e6, 1.8e6, 1.92e6, 2.048e6, 2.4e6, 2.56e6]
         for chan, mboard in enumerate(op.mboards):
-
-            if (chan <= op.nmboards) and (mboard is not ""):
-                rtl_args= "numchan=" + str(1) + " " + op.mboard_strs[chan]
-                rtlsdr_sources[chan] = osmosdr.source( args=rtl_args)
-            else:
-                rtl_args= "numchan=" + str(1) + " " + "rtl=" + str(chan)
-                rtlsdr_sources[chan] = osmosdr.source( args="numchan=" + str(1) )
-
+            rtlsdr_sources[chan] = osmosdr.source(args = op.mboard_strs[chan])
 
             # set master clock rate
             clock_rate = op.clock_rates[chan]
@@ -648,7 +650,6 @@ class Thor(object):
 
         # populate flowgraph one channel at a time
         fg = gr.top_block()
-        ipdb.set_trace()
         for ko in range(op.nochs):
             rtl_chan = rtl_dict[ko]
             # receiver channel number corresponding to this output channel
@@ -822,8 +823,7 @@ class Thor(object):
                 stop_on_skipped=op.stop_on_dropped,
                 debug=op.verbose,
             )
-
-            connections = [(rtl_chan, kr)]
+            connections = [(rtl_chan, 0)]
             if resampler is not None:
                 connections.append((resampler, 0))
                 connections.append((resampler_skiphead, 0))
@@ -836,7 +836,6 @@ class Thor(object):
                 connections.append((convert, 0))
             connections.append((dst, 0))
             connections = tuple(connections)
-
             # make channel connections in flowgraph
             fg.connect(*connections)
 
@@ -1005,7 +1004,7 @@ def _add_dir_group(parser):
 def _add_mainboard_group(parser):
     mbgroup = parser.add_argument_group(title='mainboard')
     mbgroup.add_argument(
-        '-t', '--radiotype', dest='radtype', action=Extend,
+        '-t', '--radiotype', dest='radtype',
         help='''The type of radio that is used for recording.'''
     )
     mbgroup.add_argument(
