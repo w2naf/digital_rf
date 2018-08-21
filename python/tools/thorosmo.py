@@ -336,28 +336,11 @@ class Thor(object):
             op.centerfreqs[rch] if f in (None, True) else f
             for f, rch in zip(op.ch_centerfreqs, op.channels)
         ]
-      # fcd=0[,device=hw:2][,type=2]
-      # miri=0[,buffers=32] ...
-      # rtl=serial_number ...
-      # rtl=0[,rtl_xtal=28.8e6][,tuner_xtal=28.8e6] ...
-      # rtl=1[,buffers=32][,buflen=N*512] ...
-      # rtl=2[,direct_samp=0|1|2][,offset_tune=0|1][,bias=0|1] ...
-      # rtl_tcp=127.0.0.1:1234[,psize=16384][,direct_samp=0|1|2][,offset_tune=0|1][,bias=0|1] ...
-      # netsdr=127.0.0.1[:50000][,nchan=2]
-      # sdr-ip=127.0.0.1[:50000]
-      # cloudiq=127.0.0.1[:50000]
-      # sdr-iq=/dev/ttyUSB0
-      # osmosdr=0[,buffers=32][,buflen=N*512] ...
-      # airspy=0[,bias=0|1][,linearity][,sensitivity]
-      # redpitaya=192.168.1.100[:1001]
-      # freesrp=0[,fx3='path/to/fx3.img',fpga='path/to/fpga.bin',loopback]
-      # hackrf=0[,buffers=32][,bias=0|1][,bias_tx=0|1]
-      # bladerf=0[,tamer=internal|external|external_1pps][,smb=25e6]
+
         accpt_types = ['fcd', 'rtl', 'rtl_tcp', 'netsdr','sdr-ip', 'cloudiq', 'osmosdr',
                        'sdr-iq', 'airspy', 'redpitaya', 'freesrp', 'hackrf',
                        'bladerf']
 
-        port_radios = ['netsdr','sdr-ip','cloudiq','sdr-iq','redpitaya']
         radio_type = op.radtype
 
         if not radio_type in accpt_types:
@@ -367,8 +350,7 @@ class Thor(object):
         op.mboard_strs = []
         for n, mb in enumerate(op.mboards):
             s = 'numchan=1 {type}={mb}'.format(type=radio_type, mb=mb.strip())
-            if radio_type in port_radios:
-                s = s + op.subdevs[0]
+
             s = ','.join(chain([s],op.dev_args))
             op.mboard_strs.append(s)
 
@@ -412,34 +394,34 @@ class Thor(object):
         op = self.op
         op.otw_format = 'sc32'
 
-        rtlsdr_sources = {}
+        osmo_sources = {}
         sup_gs = [0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7,
                   20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2,
                   42.1, 43.4, 43.9, 44.5, 48.0, 49.6]
         sup_sr = [1.024e6, 1.4e6, 1.8e6, 1.92e6, 2.048e6, 2.4e6, 2.56e6]
         for chan, mboard in enumerate(op.mboards):
-            rtlsdr_sources[chan] = osmosdr.source(args = op.mboard_strs[chan])
+            osmo_sources[chan] = osmosdr.source(args = op.mboard_strs[chan])
 
             # set master clock rate
             clock_rate = op.clock_rates[chan]
             if clock_rate is not None:
-                rtlsdr_sources[chan].set_clock_rate(clock_rate, 0)
-            op.clock_rates[chan] = rtlsdr_sources[chan].get_clock_rate()
-            rtlsdr_sources[chan].set_sample_rate(float(op.samplerate))
-            # rtlsdr_sources[chan].set_freq_corr(self.ppm, 0)
-            rtlsdr_sources[chan].set_center_freq(op.centerfreqs[chan], 0)
-#            self.rtlsdr_sources[chan].set_dc_offset_mode(2, 0)
-#            self.rtlsdr_sources[chan].set_iq_balance_mode(2, 0)
-            rtlsdr_sources[chan].set_gain_mode(False, 0)
-            rtlsdr_sources[chan].set_if_gain(24, 0)
-            rtlsdr_sources[chan].set_antenna("", 0)
-            rtlsdr_sources[chan].set_gain(op.gains[chan], 0)
+                osmo_sources[chan].set_clock_rate(clock_rate, 0)
+            op.clock_rates[chan] = osmo_sources[chan].get_clock_rate()
+            osmo_sources[chan].set_sample_rate(float(op.samplerate))
+            # osmo_sources[chan].set_freq_corr(self.ppm, 0)
+            osmo_sources[chan].set_center_freq(op.centerfreqs[chan], 0)
+#            self.osmo_sources[chan].set_dc_offset_mode(2, 0)
+#            self.osmo_sources[chan].set_iq_balance_mode(2, 0)
+            osmo_sources[chan].set_gain_mode(False, 0)
+            osmo_sources[chan].set_if_gain(24, 0)
+            osmo_sources[chan].set_antenna(op.antennas[chan], 0)
+            osmo_sources[chan].set_gain(op.gains[chan], 0)
 
 
-        samplerate = rtlsdr_sources[0].get_sample_rate()
+        samplerate = osmo_sources[0].get_sample_rate()
         # calculate longdouble precision/rational sample rate
         # (integer division of clock rate)
-        cr = rtlsdr_sources[0].get_clock_rate(0)
+        cr = osmo_sources[0].get_clock_rate(0)
         #HACK might not need it.
         if cr==0:
             cr = 28.8e6
@@ -447,7 +429,7 @@ class Thor(object):
         samplerate_ld = np.longdouble(cr) / srdec
         op.samplerate = samplerate_ld
         op.samplerate_frac = Fraction(cr).limit_denominator() / srdec
-        return rtlsdr_sources
+        return osmo_sources
         # self.set_freq_corr(self.ppm)
         # self.apply_synchronization_settings()
         #
@@ -585,7 +567,7 @@ class Thor(object):
 
         # get RTL sources
 
-        rtl_dict = self._osmosdr_setup()
+        osmo_dict = self._osmosdr_setup()
 
         # finalize options (for settings that depend on USRP setup)
         self._finalize_options()
@@ -615,12 +597,12 @@ class Thor(object):
             # (at time math.ceil(tt))
             # then sets the time for the subsequent pps
             # (at time math.ceil(tt) + 1.0)
-            for ichan in rtl_dict.keys():
-                rtl_chan = rtl_dict[ichan]
+            for ichan in osmo_dict.keys():
+                rtl_chan = osmo_dict[ichan]
                 rtl_chan.set_time_unknown_pps(osmosdr.time_spec_t(math.ceil(tt) + 1.0))
         else:
-            for ichan in rtl_dict.keys():
-                rtl_chan = rtl_dict[ichan]
+            for ichan in osmo_dict.keys():
+                rtl_chan = osmo_dict[ichan]
                 rtl_chan.set_time_now(osmosdr.time_spec_t(tt))
 
         # set launch time
@@ -651,7 +633,7 @@ class Thor(object):
         # populate flowgraph one channel at a time
         fg = gr.top_block()
         for ko in range(op.nochs):
-            rtl_chan = rtl_dict[ko]
+            rtl_chan = osmo_dict[ko]
             # receiver channel number corresponding to this output channel
             kr = op.channels[ko]
             # mainboard number corresponding to this receiver's channel
@@ -789,7 +771,7 @@ class Thor(object):
                 metadata=dict(
                     # receiver metadata for USRP
                     receiver=dict(
-                        description='RTL SDR dongles using GNU Radio',
+                        description= op.radtype +'SDR using OsmoSDR GNU Radio block',
                         antenna=op.antennas[kr],
                         bandwidth=op.bandwidths[kr],
                         center_freq=op.centerfreqs[kr],
@@ -875,8 +857,8 @@ class Thor(object):
                     ct_secs = ct_td.total_seconds() // 1.0
                     ct_frac = ct_td.microseconds / 1000000.0
                     cmd_time = (osmosdr.time_spec_t(ct_secs) +osmosdr.time_spec_t(ct_frac))
-                    for ichan in rtl_dict.keys():
-                        rtl_chan = rtl_dict[ichan]
+                    for ichan in osmo_dict.keys():
+                        rtl_chan = osmo_dict[ichan]
 
                         rtl_chan.set_command_time(cmd_time,0)
                         stop_enum = osmosdr.stream_cmd.STREAM_MODE_STOP_CONTINUOUS
@@ -1338,15 +1320,71 @@ def _build_thor_parser(Parser, *args):
         width=(width - 2), break_long_words=False, break_on_hyphens=False,
         subsequent_indent=' ' * (len(scriptname) + 1),
     )
+
     egs = [
+        'rtl',
         '''\
-        {0} -m 192.168.20.2 -d "A:A A:B" -c h,v -f 95e6 -r 100e6/24
+        {0} -t rtl -m 00000003,00000004  -c h,v -f 891e6 -r 2.56e6
         /data/test
         ''',
         '''\
-        {0} -m 192.168.10.2 -d "A:0" -c ch1 -y "TX/RX" -f 20e6 -F 10e3 -g 20
-        -b 0 -r 1e6 /data/test
+        {0} -t rtl -m 00000003 -A recv_buff_size=32000 -A num_recv_frames=512
+        -c ch1 -f 891e6 -r 2.56e6 /data/test
         ''',
+        '''\
+        {0} -t rtl_tcp -m 127.0.0.1:1234 -A recv_buff_size=32000 -A num_recv_frames=512
+        -c ch1 -f 891e6 -r 2.56e6 /data/test
+        ''',
+        'fcd',
+        '''\
+        {0} -t fcd -m 0   -A device=hw:2 -A type=2
+        -c ch1 -f 891e6 -r 2.56e6 /data/test
+        ''',
+        'miri',
+        '''\
+        {0} -t miri -m 0  -A buffers=32 -c ch1 -f 891e6 -r 2.56e6
+         /data/test
+        ''',
+        'netsdr',
+        '''\
+        {0} -t netsdr -m 127.0.0.1:5000 -A nchan=2 -c ch1 -f 8e6 -r 1e6
+         /data/test
+        ''',
+        'sdr-ip',
+        '''\
+        {0} -t sdr-ip -m 127.0.0.1:5000 -c ch1 -f 8e6 -r 1e6
+         /data/test
+        ''',
+        'cloudiq',
+        '''\
+        {0} -t cloudiq -m 127.0.0.1:5000 -c ch1 -f 8e6 -r 1e6
+         /data/test
+        ''',
+        'sdr-iq',
+        '''\
+        {0} -t sdr-iq -m /dev/ttyUSB0 -c ch1 -f 8e6 -r 1e6
+         /data/test
+        ''',
+        'airspy',
+        '''\
+        {0} -t airspy -m 0 -A bias=0|1 -A linearity -A sensitivity -c ch1 -f 8e6 -r 1e6
+         /data/test
+        ''',
+        'redpitaya',
+        '''\
+        {0} -t redpitaya -m 192.168.1.100:1001 -c ch1 -f 8e6 -r 1e6
+         /data/test
+        ''',
+        'hackrf',
+        '''\
+        {0} -t hackrf -m 0 -A buffers=32 -A bias=0|1 -A bias_tx=0|1 -c ch1 -f 8e6
+         -r 1e6 /data/test
+        ''',
+        'bladerf',
+        '''\
+        {0} -t bladerf -m 0 -A timer=internal|external|external_1pps -A smb=25e6
+         -c ch1 -f 8e6 -r 1e6 /data/test
+        '''
     ]
     egs = [' \\\n'.join(egtw.wrap(dedent(s.format(scriptname)))) for s in egs]
     epi = '\n' + '\n\n'.join(epi_pars + egs) + '\n'
