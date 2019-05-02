@@ -29,8 +29,6 @@ import pytz
 import scipy
 import scipy.signal
 
-matplotlib.rc('axes', hold=False)
-
 
 class DataPlotter(object):
 
