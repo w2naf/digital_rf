@@ -7,7 +7,7 @@ if(CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR)
  source directory.")
 endif(CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR)
 
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 3.5 REQUIRED)
 
 # get the package version from setup.py
 execute_process(

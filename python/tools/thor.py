@@ -8,7 +8,7 @@
 # The full license is in the LICENSE file, distributed with this software.
 # ----------------------------------------------------------------------------
 """Record data from synchronized USRPs in Digital RF format."""
-from __future__ import absolute_import, division, print_function
+
 
 import argparse
 import math
@@ -1581,7 +1581,7 @@ def _run_thor(args):
     # separate args.chs (num, name) tuples into args.channels and
     # args.channel_names
     if args.chs is not None:
-        args.channels, args.channel_names = map(list, zip(*args.chs))
+        args.channels, args.channel_names = list(map(list, list(zip(*args.chs))))
     del args.chs
 
     # remove redundant arguments in dev_args, stream_args, tune_args
@@ -1593,7 +1593,7 @@ def _run_thor(args):
                 'Device arguments must be {KEY}={VALUE} pairs.'
             )
         args.dev_args = [
-            '{0}={1}'.format(k, v) for k, v in dev_args_dict.items()
+            '{0}={1}'.format(k, v) for k, v in list(dev_args_dict.items())
         ]
     if args.stream_args is not None:
         try:
@@ -1603,7 +1603,7 @@ def _run_thor(args):
                 'Stream arguments must be {KEY}={VALUE} pairs.'
             )
         args.stream_args = [
-            '{0}={1}'.format(k, v) for k, v in stream_args_dict.items()
+            '{0}={1}'.format(k, v) for k, v in list(stream_args_dict.items())
         ]
     if args.tune_args is not None:
         try:
@@ -1613,7 +1613,7 @@ def _run_thor(args):
                 'Tune request arguments must be {KEY}={VALUE} pairs.'
             )
         args.tune_args = [
-            '{0}={1}'.format(k, v) for k, v in tune_args_dict.items()
+            '{0}={1}'.format(k, v) for k, v in list(tune_args_dict.items())
         ]
 
     # convert metadata strings to a dictionary

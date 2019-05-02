@@ -66,7 +66,7 @@ class DataPlotter:
             self.dio.append(drf.DigitalRFReader(p))
 
             if self.control.verbose:
-                print 'bounds:', self.dio[idx].get_bounds(self.channel[idx])
+                print('bounds:', self.dio[idx].get_bounds(self.channel[idx]))
 
             self.bounds.append(self.dio[idx].get_bounds(self.channel[idx]))
 
@@ -74,7 +74,7 @@ class DataPlotter:
             self.dmd.append(drf.DigitalMetadataReader(p + '/' + self.channel[idx] + '/metadata'))
 
         # processing pair list
-        pl = range(len(self.dio))
+        pl = list(range(len(self.dio)))
 
         if self.control.xtype == 'self':
             self.xlist = list(it.product(pl,repeat=2))
@@ -89,11 +89,11 @@ class DataPlotter:
         elif self.control.xtype == 'permute':
             self.xlist = list(it.permutations(pl,2))
         else:
-            print 'unknown processing pair type ', self.control.xtype
+            print('unknown processing pair type ', self.control.xtype)
             sys.exit(1)
 
-        print 'pair list ', pl
-        print 'xlist ', self.xlist
+        print('pair list ', pl)
+        print('xlist ', self.xlist)
 
         # Figure setup
         # two plots coherence and phase for each pair
@@ -143,19 +143,19 @@ class DataPlotter:
             xidx, yidx = xpair
 
             if self.control.verbose:
-                print 'pair is : ', xidx, yidx
+                print('pair is : ', xidx, yidx)
 
             # sample rate
             xsr = self.dio[xidx].get_properties(self.channel[xidx])['samples_per_second']
             ysr = self.dio[yidx].get_properties(self.channel[yidx])['samples_per_second']
 
             if self.control.verbose:
-                print 'sample rate, x: ', xsr, ' y: ', ysr
+                print('sample rate, x: ', xsr, ' y: ', ysr)
 
             if xsr == ysr:
                 sr = xsr
             else:
-                print 'problem, sample rates of data must currently match!'
+                print('problem, sample rates of data must currently match!')
                 sys.exit(1)
 
 
@@ -164,7 +164,7 @@ class DataPlotter:
             yb = self.bounds[yidx]
 
             if self.control.verbose:
-                print 'data bounds, xb: ', xb, ' yb: ', yb
+                print('data bounds, xb: ', xb, ' yb: ', yb)
 
             b = (numpy.max([xb[0],yb[0]]),numpy.min([xb[1],yb[1]]))
 
@@ -185,8 +185,8 @@ class DataPlotter:
 
             if self.control.verbose:
 
-                print 'start sample st0: ', st0
-                print 'end sample et0: ', et0
+                print('start sample st0: ', st0)
+                print('end sample et0: ', et0)
 
             blocks = self.control.bins * self.control.frames
 
@@ -194,7 +194,7 @@ class DataPlotter:
             total_samples = blocks * samples_per_stripe
 
             if total_samples > (et0 - st0):
-                print 'Insufficient samples for %d samples per stripe and %d blocks between %ld and %ld' % (samples_per_stripe, blocks, st0, et0)
+                print('Insufficient samples for %d samples per stripe and %d blocks between %ld and %ld' % (samples_per_stripe, blocks, st0, et0))
                 return
 
             stripe_stride = (et0 - st0) / blocks
@@ -203,27 +203,27 @@ class DataPlotter:
 
             start_sample = st0
 
-            print 'first ', start_sample
+            print('first ', start_sample)
 
             # get metadata
             # this could be done better to ensure we catch frequency or sample rate
             # changes
             xmdf = self.dio[xidx].read_metadata(st0, et0, self.channel[xidx])
             try:
-                xmd = xmdf[xmdf.keys()[0]]
+                xmd = xmdf[list(xmdf.keys())[0]]
                 xcfreq = xmd['center_frequencies'].ravel()[self.sub_channel[xidx]]
             except (IndexError, KeyError):
                 xcfreq = 0.0
             ymdf = self.dio[yidx].read_metadata(st0, et0, self.channel[yidx])
             try:
-                ymd = ymdf[ymdf.keys()[0]]
+                ymd = ymdf[list(ymdf.keys())[0]]
                 ycfreq = ymd['center_frequencies'].ravel()[self.sub_channel[yidx]]
             except (IndexError, KeyError):
                 ycfreq = 0.0
-            print 'center frequencies ', xcfreq, ycfreq
+            print('center frequencies ', xcfreq, ycfreq)
 
             if self.control.verbose:
-                print 'processing info : ', self.control.frames, self.control.bins, samples_per_stripe, bin_stride
+                print('processing info : ', self.control.frames, self.control.bins, samples_per_stripe, bin_stride)
 
             for p in numpy.arange(0,self.control.frames*2,2):
 
@@ -235,7 +235,7 @@ class DataPlotter:
                 for b in numpy.arange(self.control.bins):
 
                     if self.control.verbose:
-                        print 'read vector :', self.channel, start_sample, samples_per_stripe
+                        print('read vector :', self.channel, start_sample, samples_per_stripe)
 
                     xdata = self.dio[xidx].read_vector(start_sample, samples_per_stripe, self.channel[xidx], self.sub_channel[xidx])
 
@@ -322,7 +322,7 @@ class DataPlotter:
                 for tk in ax1.get_xticklabels(): tk.set_size(8)
                 for tk in ax1.get_yticklabels(): tk.set_size(8)
 
-                print 'last ', start_sample
+                print('last ', start_sample)
 
             # create a time stamp
             start_time = st0 / sr
@@ -346,7 +346,7 @@ class DataPlotter:
 
 
             self.gridspec[fidx].update()
-            print "show plot"
+            print("show plot")
             self.f[fidx].tight_layout()
 
             self.f[fidx].subplots_adjust(top=0.95,right=0.88)
@@ -397,7 +397,7 @@ def parse_command_line():
 (options, args) = parse_command_line()
 
 if options.path == None:
-    print "Please provide an input source with the -p option!"
+    print("Please provide an input source with the -p option!")
     sys.exit(1)
 
 # Activate the DataPlotter

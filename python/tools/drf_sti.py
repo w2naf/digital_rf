@@ -45,11 +45,11 @@ class DataPlotter(object):
         self.dio = drf.DigitalRFReader(self.control.path)
 
         if self.control.verbose:
-            print 'channel bounds:', self.dio.get_bounds(self.channel)
+            print('channel bounds:', self.dio.get_bounds(self.channel))
 
         self.bounds = self.dio.get_bounds(self.channel)
 
-        print 'bounds ', self.bounds
+        print('bounds ', self.bounds)
 
         # Figure setup
 
@@ -82,13 +82,13 @@ class DataPlotter(object):
         sr = self.dio.get_properties(self.channel)['samples_per_second']
 
         if self.control.verbose:
-            print 'sample rate: ', sr
+            print('sample rate: ', sr)
 
         # initial time info
         b = self.dio.get_bounds(self.channel)
 
         if self.control.verbose:
-            print 'data bounds: ', b
+            print('data bounds: ', b)
 
         if self.control.start:
             dtst0 = dateutil.parser.parse(self.control.start)
@@ -108,8 +108,8 @@ class DataPlotter(object):
 
         if self.control.verbose:
 
-            print 'start sample st0: ', st0
-            print 'end sample et0: ', et0
+            print('start sample st0: ', st0)
+            print('end sample et0: ', et0)
 
         blocks = self.control.bins * self.control.frames
 
@@ -118,7 +118,7 @@ class DataPlotter(object):
         total_samples = blocks * samples_per_stripe
 
         if total_samples > (et0 - st0):
-            print 'Insufficient samples for %d samples per stripe and %d blocks between %ld and %ld' % (samples_per_stripe, blocks, st0, et0)
+            print('Insufficient samples for %d samples per stripe and %d blocks between %ld and %ld' % (samples_per_stripe, blocks, st0, et0))
             return
 
         stripe_stride = (et0 - st0) / blocks
@@ -127,20 +127,20 @@ class DataPlotter(object):
 
         start_sample = st0
 
-        print 'first ', start_sample
+        print('first ', start_sample)
 
         # get metadata
         # this could be done better to ensure we catch frequency or sample rate
         # changes
         mdt = self.dio.read_metadata(st0, et0, self.channel)
         try:
-            md = mdt[mdt.keys()[0]]
+            md = mdt[list(mdt.keys())[0]]
             cfreq = md['center_frequencies'].ravel()[self.sub_channel]
         except (IndexError, KeyError):
             cfreq = 0.0
 
         if self.control.verbose:
-            print 'processing info : ', self.control.frames, self.control.bins, samples_per_stripe, bin_stride
+            print('processing info : ', self.control.frames, self.control.bins, samples_per_stripe, bin_stride)
 
         for p in numpy.arange(self.control.frames):
             sti_psd_data = numpy.zeros(
@@ -150,7 +150,7 @@ class DataPlotter(object):
             for b in numpy.arange(self.control.bins):
 
                 if self.control.verbose:
-                    print 'read vector :', self.channel, start_sample, samples_per_stripe
+                    print('read vector :', self.channel, start_sample, samples_per_stripe)
 
                 data = self.dio.read_vector(
                     start_sample, samples_per_stripe, self.channel, self.sub_channel)
@@ -241,7 +241,7 @@ class DataPlotter(object):
                 tk.set_size(8)
             del tl
 
-        print 'last ', start_sample
+        print('last ', start_sample)
 
         # create a time stamp
         start_time = st0 / sr
@@ -279,10 +279,10 @@ class DataPlotter(object):
             fname, ext = os.path.splitext(self.control.outname)
             if ext == '':
                 ext = '.png'
-            print "Save plot as {}".format(fname+ext)
+            print("Save plot as {}".format(fname+ext))
             matplotlib.pyplot.savefig(fname+ext)
         if self.control.appear or not self.control.outname:
-            print "Show plot"
+            print("Show plot")
             matplotlib.pyplot.show()
 
 
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     (options, args) = parse_command_line()
 
     if options.path is None:
-        print "Please provide an input source with the -p option!"
+        print("Please provide an input source with the -p option!")
         sys.exit(1)
 
     # Activate the DataPlotter

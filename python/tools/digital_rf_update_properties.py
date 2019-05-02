@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------------
 """Convert early Digital RF 2 (< 2.4) metadata.h5 file to drf_properties.h5."""
 
-from __future__ import absolute_import, division, print_function
+
 
 import argparse
 import os
@@ -75,9 +75,9 @@ def update_properties_file(channel_dir):
                 attr_dict[i_attr] = fi.attrs['samples_per_second']
                 attr_dict[i_attr][0] = 1
 
-    first_rf_file = digital_rf.ilsdrf(
+    first_rf_file = next(digital_rf.ilsdrf(
         channel_dir, include_dmd=False, include_drf_properties=False,
-    ).next()
+    ))
 
     with h5py.File(first_rf_file, 'r') as fi:
         md = fi['rf_data'].attrs
